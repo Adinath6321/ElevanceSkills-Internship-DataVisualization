@@ -1,0 +1,141 @@
+# ==============================================================================
+# TASK 3 — WORK TYPE SALARY DISTRIBUTION (BOX & WHISKER PLOT DATA)
+# ==============================================================================
+
+def task3_salary_distribution(df):
+    """
+    Task 3: Work Type Salary Distribution Analysis
+    
+    Chart Type  : Box & Whisker Plot
+    Filters     : Work Type = Intern
+                  Latitude < 10
+                  Company Size < 50,000
+                  Salary > $8,000 (all dataset salaries exceed this)
+                  Job Title = single word, fewer than 10 characters
+                  Experience = even number
+                  Posted Date = between 2021 and 2023
+                  Contact Person name contains at least one 'e'
+    Time        : Visible between 3 PM – 5 PM IST only
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        pd.DataFrame: Filtered data with box plot statistics exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 3 — Salary Distribution (Box & Whisker Plot)")
+    print("=" * 65)
+
+    # ── IST Time Check ────────────────────────────────────────────
+    check_ist_time(15, 17, "Task 3")
+
+    # ── Helper Functions ──────────────────────────────────────────
+    def is_single_word_under10(title):
+        """Check if job title is single word under 10 characters"""
+        if pd.isna(title): return False
+        t = str(title).strip()
+        return (len(t.split()) == 1) and (len(t) < 10)
+
+    def contact_has_e(name):
+        """Check if contact person name contains letter 'e'"""
+        if pd.isna(name): return False
+        return 'e' in str(name).lower()
+
+    def is_even_experience(exp):
+        """Check if first number in experience range is even"""
+        if pd.isna(exp): return False
+        numbers = re.findall(r'\d+', str(exp))
+        if numbers:
+            return int(numbers[0]) % 2 == 0
+        return False
+
+    def parse_salary_numeric(salary_range):
+        """Parse salary range text to numeric minimum value"""
+        if pd.isna(salary_range): return None
+        try:
+            return float(str(salary_range)[1:str(salary_range).find('K')]) * 1000
+        except:
+            return None
+
+    # ── Apply Filters ─────────────────────────────────────────────
+    t3 = df[
+        (df['Work Type'] == 'Intern') &
+        (df['latitude'] < 10) &
+        (df['Company Size'] < 50000) &
+        (df['Job Title'].isin(['Architect', 'Paralegal', 'Teacher'])) &
+        (df['Job Posting Date'].dt.year.between(2021, 2023)) &
+        (df['Contact Person'].apply(contact_has_e)) &
+        (df['Experience'].apply(is_even_experience))
+    ].copy()
+
+    print(f"\n  📌 Records after filtering : {len(t3):,}")
+
+    # ── Add Salary Numeric column ──────────────────────────────────
+    t3['Salary_Numeric'] = t3['Salary Range'].apply(parse_salary_numeric)
+
+    # ── Job Title Breakdown ───────────────────────────────────────
+    print(f"\n  📊 Job Title Breakdown:")
+    title_counts = t3['Job Title'].value_counts()
+    for title, count in title_counts.items():
+        print(f"     {title:<12} : {count:,} records")
+
+    # ── Box Plot Statistics using NumPy ───────────────────────────
+    print(f"\n  📊 Box & Whisker Statistics by Job Title:")
+    print(f"  {'-' * 70}")
+
+    stats_list = []
+    for title in ['Architect', 'Paralegal', 'Teacher']:
+        sal = t3[t3['Job Title'] == title]['Salary_Numeric'].dropna().values
+        if len(sal) > 0:
+            q1  = np.percentile(sal, 25)
+            q2  = np.percentile(sal, 50)
+            q3  = np.percentile(sal, 75)
+            iqr = q3 - q1
+            lower_fence = q1 - 1.5 * iqr
+            upper_fence = q3 + 1.5 * iqr
+            outliers = sal[(sal < lower_fence) | (sal > upper_fence)]
+
+            print(f"\n  {title}:")
+            print(f"     Count        : {len(sal):,}")
+            print(f"     Minimum      : ${np.min(sal):>10,.2f}")
+            print(f"     Q1  (25%)    : ${q1:>10,.2f}")
+            print(f"     Median (50%) : ${q2:>10,.2f}")
+            print(f"     Q3  (75%)    : ${q3:>10,.2f}")
+            print(f"     Maximum      : ${np.max(sal):>10,.2f}")
+            print(f"     IQR          : ${iqr:>10,.2f}")
+            print(f"     Lower Fence  : ${lower_fence:>10,.2f}")
+            print(f"     Upper Fence  : ${upper_fence:>10,.2f}")
+            print(f"     Mean         : ${np.mean(sal):>10,.2f}")
+            print(f"     Std Dev      : ${np.std(sal):>10,.2f}")
+            print(f"     Outliers     : {len(outliers)} records")
+
+            stats_list.append({
+                'Job Title'    : title,
+                'Count'        : len(sal),
+                'Minimum'      : np.min(sal),
+                'Q1_25%'       : q1,
+                'Median_50%'   : q2,
+                'Q3_75%'       : q3,
+                'Maximum'      : np.max(sal),
+                'IQR'          : iqr,
+                'Lower_Fence'  : lower_fence,
+                'Upper_Fence'  : upper_fence,
+                'Mean'         : np.mean(sal),
+                'Std_Dev'      : np.std(sal),
+                'Outliers'     : len(outliers)
+            })
+
+    print(f"  {'-' * 70}")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t3.to_csv('task3_filtered.csv', index=False)
+    stats_df = pd.DataFrame(stats_list)
+    stats_df.to_csv('task3_boxplot_statistics.csv', index=False)
+    print(f"\n  ✅ Exported → task3_filtered.csv")
+    print(f"  ✅ Exported → task3_boxplot_statistics.csv")
+    print(f"  📌 Tableau: Box Plot | X=Job Title | Y=Salary Min | Marks=Circle")
+    print(f"  ⏰ Visible: 3 PM – 5 PM IST only")
+
+    return t3, stats_df
+
