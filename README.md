@@ -332,12 +332,3 @@ def has_two_vowels(name):
 
 ---
 
-## 📧 Contact & Submission
-
-**Intern:** Adinath Chavan  
-**Organization:** ElevanceSkills Technology Private Limited  
-**Submission Email:** training@elevanceskills.com  
-**Internship Portal:** [intern.elevanceskills.com](https://intern.elevanceskills.com)  
-
----
-
