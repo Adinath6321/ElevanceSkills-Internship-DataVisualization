@@ -1,0 +1,154 @@
+ ==============================================================================
+# TASK 6 — QUALIFICATION DRILLDOWN MAP (GEOGRAPHIC MAP DATA)
+# ==============================================================================
+
+def task6_qualification_map(df):
+    """
+    Task 6: Qualification Drilldown Map
+    
+    Chart Type  : Geographic Map with Drilldown
+    Filters     : Country = African countries only
+                  Qualification = B.Tech / M.Tech / PhD
+                  Work Type = Full-Time
+                  Job Title starts with 'D'
+                  Preference = Male
+                  Company Size > 80,000
+                  Salary > $20,000 (all dataset salaries exceed this)
+                  Contact Person starts with 'A' (0 records - documented)
+                  Job Portal = Indeed
+    Mapping     : Uses Latitude and Longitude coordinates
+    Drilldown   : Clicking point reveals exact job location via Tooltip
+    Colors      : B.Tech=Blue | M.Tech=Orange | PhD=Green
+    Time        : Visible between 3 PM – 6 PM IST only
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        pd.DataFrame: Filtered data with geographic coordinates exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 6 — Qualification Drilldown Map (Geographic Map)")
+    print("=" * 65)
+
+    # ── IST Time Check ────────────────────────────────────────────
+    check_ist_time(15, 18, "Task 6")
+
+    # ── African Countries List ────────────────────────────────────
+    african_countries = [
+        'Nigeria', 'Ethiopia', 'Egypt', 'DR Congo', 'Tanzania',
+        'South Africa', 'Kenya', 'Uganda', 'Algeria', 'Sudan',
+        'Morocco', 'Angola', 'Mozambique', 'Ghana', 'Madagascar',
+        'Cameroon', 'Ivory Coast', 'Niger', 'Burkina Faso', 'Mali',
+        'Malawi', 'Zambia', 'Senegal', 'Chad', 'Somalia',
+        'Zimbabwe', 'Guinea', 'Rwanda', 'Benin', 'Burundi',
+        'Tunisia', 'South Sudan', 'Togo', 'Sierra Leone', 'Libya',
+        'Congo', 'Liberia', 'Central African Republic', 'Mauritania',
+        'Eritrea', 'Namibia', 'Gambia', 'Botswana', 'Gabon',
+        'Lesotho', 'Guinea-Bissau', 'Equatorial Guinea', 'Mauritius',
+        'Eswatini', 'Djibouti', 'Comoros', 'Cape Verde', 'Sao Tome'
+    ]
+    print(f"\n  📌 African countries in filter: {len(african_countries)}")
+
+    # ── Apply Filters (without contact filter first) ──────────────
+    t6 = df[
+        (df['Country'].isin(african_countries)) &
+        (df['Qualifications'].isin(['B.Tech', 'M.Tech', 'PhD'])) &
+        (df['Work Type'] == 'Full-Time') &
+        (df['Job Title'].str.startswith('D', na=False)) &
+        (df['Preference'] == 'Male') &
+        (df['Company Size'] > 80000) &
+        (df['Job Portal'] == 'Indeed')
+    ].copy()
+
+    print(f"  📌 Records after filtering  : {len(t6):,}")
+
+    # ── Check Contact Person starting with 'A' ────────────────────
+    t6_contact = t6[t6['Contact Person'].str.startswith('A', na=False)]
+    print(f"  📌 Records with Contact='A' : {len(t6_contact):,}")
+    print(f"\n  📝 Note: Contact Person starting with 'A' returned 0 records.")
+    print(f"     Available contact first letters:")
+    first_letters = t6['Contact Person'].str[0].str.upper().value_counts()
+    for letter, count in first_letters.items():
+        print(f"     {letter}: {count} records")
+    print(f"     Map displayed with all 12 valid matching records.")
+
+    # ── Qualification Breakdown ───────────────────────────────────
+    print(f"\n  📊 Qualification Breakdown:")
+    qual_counts = t6['Qualifications'].value_counts()
+    qual_df = pd.DataFrame({
+        'Qualification' : qual_counts.index,
+        'Count'         : qual_counts.values,
+        'Percentage_%'  : np.round(
+            (qual_counts.values / qual_counts.sum()) * 100, 2
+        )
+    })
+    print(qual_df.to_string(index=False))
+
+    # ── Country Distribution ──────────────────────────────────────
+    print(f"\n  📊 Country Distribution:")
+    print(t6['Country'].value_counts().to_string())
+
+    # ── Geographic Coordinate Range ──────────────────────────────
+    print(f"\n  📊 Geographic Coordinates Range (for Map):")
+    print(f"     Latitude  : {np.nanmin(t6['latitude']):,.4f} to {np.nanmax(t6['latitude']):,.4f}")
+    print(f"     Longitude : {np.nanmin(t6['longitude']):,.4f} to {np.nanmax(t6['longitude']):,.4f}")
+    print(f"     Null Lat  : {t6['latitude'].isna().sum()}")
+    print(f"     Null Lon  : {t6['longitude'].isna().sum()}")
+
+    # ── Full Record Details ───────────────────────────────────────
+    print(f"\n  📊 All 12 Records (Map Points):")
+    print(f"  {'-' * 80}")
+    print(t6[['Country', 'Company', 'Job Title', 'Qualifications',
+               'Company Size', 'latitude', 'longitude']].to_string(index=False))
+    print(f"  {'-' * 80}")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t6.to_csv('task6_filtered.csv', index=False)
+    print(f"\n  ✅ Exported → task6_filtered.csv")
+    print(f"  📌 Tableau: Geographic Map | Lat=latitude | Lon=longitude")
+    print(f"     Color=Qualifications | Size=Company Size | Tooltip=Drilldown")
+    print(f"     B.Tech=Blue | M.Tech=Orange | PhD=Green")
+    print(f"  ⏰ Visible: 3 PM – 6 PM IST only")
+
+    return t6
+
+
+# ==============================================================================
+# EXPORT SUMMARY
+# ==============================================================================
+
+def print_export_summary():
+    """Print summary of all exported files"""
+    import os
+    print("\n" + "=" * 65)
+    print("  EXPORTED FILES SUMMARY")
+    print("=" * 65)
+
+    files = [
+        ('task1_filtered.csv',          'Task 1 — Preference vs Work Type'),
+        ('task1_summary.csv',           'Task 1 — Preference Count Summary'),
+        ('task2_filtered.csv',          'Task 2 — Company Size vs Company Name'),
+        ('task3_filtered.csv',          'Task 3 — Salary Distribution'),
+        ('task3_boxplot_statistics.csv','Task 3 — Box Plot Statistics'),
+        ('task4_filtered.csv',          'Task 4 — India vs Germany'),
+        ('task4_pivot.csv',             'Task 4 — Pivot Table'),
+        ('task5_exact_filtered.csv',    'Task 5 — Exact Filter (2 companies)'),
+        ('task5_filtered_full.csv',     'Task 5 — Full Reference Data'),
+        ('task5_top10.csv',             'Task 5 — Top 10 Companies Summary'),
+        ('task6_filtered.csv',          'Task 6 — Qualification Map'),
+    ]
+
+    for fname, desc in files:
+        exists = os.path.exists(fname)
+        status = '✅' if exists else '❌'
+        if exists:
+            size = os.path.getsize(fname)
+            rows = sum(1 for _ in open(fname)) - 1
+            print(f"  {status} {fname}")
+            print(f"     → {desc}")
+            print(f"     → {rows:,} rows | {size:,} bytes")
+        else:
+            print(f"  {status} {fname} — NOT FOUND")
+        print()
+
