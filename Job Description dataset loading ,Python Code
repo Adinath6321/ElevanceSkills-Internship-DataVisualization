@@ -1,0 +1,99 @@
+"""
+================================================================================
+ElevanceSkills Technology Private Limited
+Data Visualization Internship — All 6 Tasks
+Intern: Adinath Chavan
+Dataset: Job Descriptions Dataset (Kaggle - ravindrasinghrana)
+Libraries: NumPy and Pandas ONLY
+================================================================================
+"""
+
+import numpy as np
+import pandas as pd
+from datetime import datetime, timezone, timedelta
+import re
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 65)
+print("  ElevanceSkills Technology Private Limited")
+print("  Data Visualization Internship — Adinath Chavan")
+print("=" * 65)
+print(f"  NumPy  Version : {np.__version__}")
+print(f"  Pandas Version : {pd.__version__}")
+print("=" * 65)
+
+
+# ==============================================================================
+# STEP 1 — LOAD AND CLEAN DATASET
+# ==============================================================================
+
+def load_and_clean_dataset(filepath):
+    """
+    Load the Job Descriptions Dataset and perform all cleaning steps.
+    
+    Parameters:
+        filepath (str): Full path to job_descriptions.csv
+    
+    Returns:
+        pd.DataFrame: Cleaned dataset ready for analysis
+    """
+    print("\n" + "=" * 65)
+    print("  LOADING AND CLEANING DATASET")
+    print("=" * 65)
+
+    # Load dataset
+    df = pd.read_csv(filepath)
+
+    # Standardize column names
+    df.columns = df.columns.str.strip()
+
+    # Clean Company Size — remove commas, convert to numeric
+    if df['Company Size'].dtype == object:
+        df['Company Size'] = pd.to_numeric(
+            df['Company Size'].astype(str).str.replace(',', '', regex=False),
+            errors='coerce'
+        )
+
+    # Parse Job Posting Date to datetime
+    if 'Job Posting Date' in df.columns:
+        df['Job Posting Date'] = pd.to_datetime(
+            df['Job Posting Date'], errors='coerce'
+        )
+
+    # Strip whitespace from all string columns
+    str_cols = df.select_dtypes(include='object').columns
+    df[str_cols] = df[str_cols].apply(lambda x: x.str.strip())
+
+    print(f"  ✅ Dataset loaded successfully!")
+    print(f"     Rows    : {df.shape[0]:,}")
+    print(f"     Columns : {df.shape[1]}")
+    print(f"\n  Column Names:")
+    for col in df.columns:
+        print(f"     - {col}")
+
+    return df
+
+
+# ==============================================================================
+# HELPER FUNCTION — IST TIME CHECK
+# ==============================================================================
+
+def check_ist_time(start_hour, end_hour, task_name):
+    """
+    Check if current IST time is within the allowed window.
+    
+    Parameters:
+        start_hour (int): Start hour in IST (24-hour format)
+        end_hour (int): End hour in IST (24-hour format)
+        task_name (str): Name of the task for display
+    """
+    IST = timezone(timedelta(hours=5, minutes=30))
+    now_ist = datetime.now(IST)
+    in_range = start_hour <= now_ist.hour < end_hour
+    status = "✅ WITHIN" if in_range else "⚠️  OUTSIDE"
+    print(f"\n  ⏰ IST Time Check for {task_name}:")
+    print(f"     Current IST Time : {now_ist.strftime('%I:%M %p')}")
+    print(f"     Allowed Window   : {start_hour}:00 – {end_hour}:00 IST")
+    print(f"     Status           : {status} allowed window")
+    return in_range
