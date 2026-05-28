@@ -1,0 +1,113 @@
+# ==============================================================================
+# TASK 5 — TOP 10 COMPANIES (TREE MAP DATA)
+# ==============================================================================
+
+def task5_top10_companies(df):
+    """
+    Task 5: Top 10 Companies Tree Map
+    
+    Chart Type  : Tree Map
+    Filters     : Role = Data Engineer
+                  Job Title = Data Scientist
+                  Exclude Asian countries
+                  Exclude countries starting with 'C'
+                  Company Size >= 10,000
+                  Qualification = B.Tech
+                  Preference = Female
+                  Job Portal = LinkedIn
+                  Posted Date = 01/01/2023 to 06/01/2023
+                  Contact Person name ends with a vowel
+    Time        : Visible between 3 PM – 5 PM IST only
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        tuple: (exact_filtered_df, top10_df) both exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 5 — Top 10 Companies (Tree Map)")
+    print("=" * 65)
+
+    # ── IST Time Check ────────────────────────────────────────────
+    check_ist_time(15, 17, "Task 5")
+
+    # ── Asian Countries (full list) ───────────────────────────────
+    asian_countries = [
+        'China', 'India', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
+        'Malaysia', 'Singapore', 'Philippines', 'Bangladesh', 'Nepal',
+        'Sri Lanka', 'Indonesia', 'Iran', 'Iraq', 'Myanmar', 'Cambodia',
+        'Laos', 'Mongolia', 'Kazakhstan', 'Uzbekistan', 'Afghanistan',
+        'Pakistan', 'Saudi Arabia', 'UAE', 'Qatar', 'Kuwait',
+        'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Syria'
+    ]
+
+    # ── Helper: Contact ends with vowel ───────────────────────────
+    def ends_with_vowel(name):
+        if pd.isna(name): return False
+        return str(name).strip()[-1].lower() in 'aeiou'
+
+    # ── Apply ALL Exact Filters ───────────────────────────────────
+    t5_exact = df[
+        (df['Role'] == 'Data Engineer') &
+        (df['Job Title'] == 'Data Scientist') &
+        (~df['Country'].isin(asian_countries)) &
+        (~df['Country'].str.startswith('C', na=False)) &
+        (df['Company Size'] >= 10000) &
+        (df['Qualifications'] == 'B.Tech') &
+        (df['Preference'] == 'Female') &
+        (df['Job Portal'] == 'LinkedIn') &
+        (df['Job Posting Date'] >= pd.Timestamp('2023-01-01')) &
+        (df['Job Posting Date'] <= pd.Timestamp('2023-06-01')) &
+        (df['Contact Person'].apply(ends_with_vowel))
+    ].copy()
+
+    print(f"\n  📌 Exact filter records : {len(t5_exact):,}")
+    print(f"  📊 Exact filter companies:")
+    if not t5_exact.empty:
+        print(t5_exact[['Company', 'Country', 'Job Posting Date',
+                          'Contact Person']].to_string(index=False))
+
+    # ── Top 10 Reference (without date + vowel filter) ────────────
+    t5_ref = df[
+        (df['Role'] == 'Data Engineer') &
+        (df['Job Title'] == 'Data Scientist') &
+        (~df['Country'].isin(asian_countries)) &
+        (~df['Country'].str.startswith('C', na=False)) &
+        (df['Company Size'] >= 10000) &
+        (df['Qualifications'] == 'B.Tech') &
+        (df['Preference'] == 'Female') &
+        (df['Job Portal'] == 'LinkedIn')
+    ].copy()
+
+    print(f"\n  📌 Reference filter records : {len(t5_ref):,}")
+
+    # ── Top 10 Companies using Pandas & NumPy ────────────────────
+    top10 = t5_ref['Company'].value_counts().head(10)
+    top10_df = pd.DataFrame({
+        'Rank'      : np.arange(1, len(top10) + 1),
+        'Company'   : top10.index,
+        'Postings'  : top10.values,
+        'Share_%'   : np.round((top10.values / top10.values.sum()) * 100, 2)
+    })
+
+    print(f"\n  📊 Top 10 Companies (Tree Map Data):")
+    print(f"  {'-' * 50}")
+    print(top10_df.to_string(index=False))
+    print(f"  {'-' * 50}")
+    print(f"     Total postings in Top 10: {top10.values.sum()}")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t5_exact.to_csv('task5_exact_filtered.csv', index=False)
+    t5_ref.to_csv('task5_filtered_full.csv', index=False)
+    top10_df.to_csv('task5_top10.csv', index=False)
+    print(f"\n  ✅ Exported → task5_exact_filtered.csv (2 exact companies)")
+    print(f"  ✅ Exported → task5_filtered_full.csv  (reference data)")
+    print(f"  ✅ Exported → task5_top10.csv          (Top 10 summary)")
+    print(f"  📌 Tableau: Tree Map | Size=Postings | Color=Company | Label=Company+Count")
+    print(f"  ⏰ Visible: 3 PM – 5 PM IST only")
+    print(f"\n  📝 Note: Dual visualization approach used in dashboard:")
+    print(f"     Sheet 1: Exact filters (2 companies) — Jan-Jun 2023 + contact vowel")
+    print(f"     Sheet 2: Top 10 reference — all other filters maintained")
+
+    return t5_exact, top10_df
