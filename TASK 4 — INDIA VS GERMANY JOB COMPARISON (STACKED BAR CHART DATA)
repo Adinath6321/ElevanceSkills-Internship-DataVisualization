@@ -1,0 +1,86 @@
+# ==============================================================================
+# TASK 4 — INDIA VS GERMANY JOB COMPARISON (STACKED BAR CHART DATA)
+# ==============================================================================
+
+def task4_india_vs_germany(df):
+    """
+    Task 4: India vs Germany Job Comparison
+    
+    Chart Type  : Stacked Bar Chart
+    Filters     : Country = India or Germany
+                  Qualification = B.Tech
+                  Work Type = Full-Time
+                  Experience > 2 years
+                  Job Title = Data Scientist / Art Teacher / Aerospace Engineer
+                  Salary > $10,000 (all dataset salaries exceed this)
+                  Job Portal = Indeed (Idealist used - see note)
+                  Company Name > 8 characters
+                  Location not empty
+    Colors      : Germany = Blue, India = Orange
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        pd.DataFrame: Filtered data with pivot table exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 4 — India vs Germany Comparison (Stacked Bar Chart)")
+    print("=" * 65)
+
+    # ── Apply Filters ─────────────────────────────────────────────
+    t4 = df[
+        (df['Country'].isin(['India', 'Germany'])) &
+        (df['Qualifications'] == 'B.Tech') &
+        (df['Work Type'] == 'Full-Time') &
+        (df['Job Title'].isin([
+            'Data Scientist', 'Art Teacher', 'Aerospace Engineer'
+        ])) &
+        (df['Job Portal'] == 'Idealist') &
+        (df['Company'].str.len() > 8) &
+        (df['location'].notna()) &
+        (df['location'] != '')
+    ].copy()
+
+    print(f"\n  📌 Records after filtering : {len(t4):,}")
+    print(f"\n  📝 Note: Indeed portal returned 0 India records for the")
+    print(f"     specified job titles with B.Tech + Full-Time filters.")
+    print(f"     Idealist portal was used as it contained records for")
+    print(f"     both India and Germany simultaneously.")
+    print(f"     All dataset salary ranges exceed $10,000 threshold.")
+
+    # ── Pivot Table Analysis ──────────────────────────────────────
+    pivot = t4.groupby(['Job Title', 'Country']).size().unstack(fill_value=0)
+    for col in ['India', 'Germany']:
+        if col not in pivot.columns:
+            pivot[col] = 0
+
+    pivot['Total'] = pivot.get('India', 0) + pivot.get('Germany', 0)
+
+    print(f"\n  📊 Job Postings — India vs Germany:")
+    print(f"  {'-' * 50}")
+    print(pivot.to_string())
+    print(f"  {'-' * 50}")
+
+    # ── Country Totals ────────────────────────────────────────────
+    print(f"\n  📊 Country-wise Totals:")
+    country_totals = t4['Country'].value_counts()
+    for country, count in country_totals.items():
+        print(f"     {country:<10} : {count:,} postings")
+
+    # ── Salary Statistics by Country using NumPy ──────────────────
+    print(f"\n  📊 Salary Range by Country:")
+    for country in ['India', 'Germany']:
+        subset = t4[t4['Country'] == country]
+        print(f"     {country}: {len(subset)} records | "
+              f"Portal: Idealist | Qualification: B.Tech")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t4.to_csv('task4_filtered.csv', index=False)
+    pivot.to_csv('task4_pivot.csv')
+    print(f"\n  ✅ Exported → task4_filtered.csv")
+    print(f"  ✅ Exported → task4_pivot.csv")
+    print(f"  📌 Tableau: Stacked Bar | X=Job Title | Y=Count | Color=Country")
+
+    return t4, pivot
+
