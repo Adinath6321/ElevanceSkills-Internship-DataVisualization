@@ -1,0 +1,69 @@
+
+# ==============================================================================
+# TASK 1 — PREFERENCE VS WORK TYPE (BAR CHART DATA)
+# ==============================================================================
+
+def task1_preference_vs_worktype(df):
+    """
+    Task 1: Preference vs Work Type Analysis
+    
+    Chart Type  : Bar Chart
+    Filters     : Work Type = Intern
+                  Company Size < 50,000
+                  Salary > $9,000 (all dataset salaries exceed this)
+    Sort        : Descending by Count
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        pd.DataFrame: Filtered and analyzed data exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 1 — Preference vs Work Type (Bar Chart)")
+    print("=" * 65)
+
+    # ── Apply Filters ─────────────────────────────────────────────
+    t1 = df[
+        (df['Work Type'] == 'Intern') &
+        (df['Company Size'] < 50000)
+    ].copy()
+
+    print(f"\n  📌 Records after filtering : {len(t1):,}")
+    print(f"     Note: All dataset salary ranges start at $55K minimum")
+    print(f"     which exceeds the $9,000 threshold automatically")
+
+    # ── Analysis using Pandas & NumPy ─────────────────────────────
+    counts = t1['Preference'].value_counts().sort_values(ascending=False)
+    total  = counts.sum()
+
+    result = pd.DataFrame({
+        'Preference'   : counts.index,
+        'Count'        : counts.values,
+        'Percentage %' : np.round((counts.values / total) * 100, 2),
+        'Rank'         : np.arange(1, len(counts) + 1)
+    })
+
+    print(f"\n  📊 Preference Distribution (Sorted Descending):")
+    print(f"  {'-' * 50}")
+    print(result.to_string(index=False))
+    print(f"  {'-' * 50}")
+    print(f"     Total Records  : {total:,}")
+    print(f"     Top Preference : {counts.index[0]} ({counts.values[0]:,} records)")
+    print(f"     Lowest         : {counts.index[-1]} ({counts.values[-1]:,} records)")
+
+    # ── Statistical Summary using NumPy ───────────────────────────
+    print(f"\n  📊 Statistical Summary:")
+    print(f"     Mean Count  : {np.mean(counts.values):,.2f}")
+    print(f"     Max Count   : {np.max(counts.values):,}")
+    print(f"     Min Count   : {np.min(counts.values):,}")
+    print(f"     Std Dev     : {np.std(counts.values):,.2f}")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t1.to_csv('task1_filtered.csv', index=False)
+    result.to_csv('task1_summary.csv', index=False)
+    print(f"\n  ✅ Exported → task1_filtered.csv")
+    print(f"  ✅ Exported → task1_summary.csv")
+    print(f"\n  📌 Tableau: Bar Chart | X=Preference | Y=Count | Sorted Descending")
+
+    return t1, result
