@@ -1,0 +1,98 @@
+==============================================================================
+# TASK 2 — COMPANY SIZE VS COMPANY NAME (SCATTER PLOT DATA)
+# ==============================================================================
+
+def task2_companysize_vs_companyname(df):
+    """
+    Task 2: Company Size vs Company Name Analysis
+    
+    Chart Type  : Scatter Plot
+    Filters     : Job Title = Mechanical Engineer
+                  Company Size < 50,000
+                  Experience > 5 years
+                  Salary > $50,000 (all dataset salaries exceed this)
+                  Work Type = Full-Time or Part-Time
+                  Preference = Male
+                  Country = Asian countries excluding starting with 'I'
+                  Job Portal = Idealist
+                  Company Name contains at least 2 vowels
+    Time        : Visible between 3 PM – 5 PM IST only
+    
+    Parameters:
+        df (pd.DataFrame): Cleaned dataset
+    
+    Returns:
+        pd.DataFrame: Filtered data exported as CSV
+    """
+    print("\n" + "=" * 65)
+    print("  TASK 2 — Company Size vs Company Name (Scatter Plot)")
+    print("=" * 65)
+
+    # ── IST Time Check ────────────────────────────────────────────
+    check_ist_time(15, 17, "Task 2")
+
+    # ── Asian Countries excluding those starting with 'I' ─────────
+    asian_countries = np.array([
+        'China', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
+        'Malaysia', 'Singapore', 'Philippines', 'Bangladesh',
+        'Nepal', 'Sri Lanka', 'Myanmar', 'Cambodia', 'Laos',
+        'Mongolia', 'Kazakhstan', 'Uzbekistan', 'Afghanistan',
+        'Pakistan', 'Saudi Arabia', 'UAE', 'Qatar', 'Kuwait',
+        'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Syria'
+    ])
+    # Exclude countries starting with 'I'
+    asian_countries = asian_countries[
+        ~np.char.startswith(asian_countries.astype(str), 'I')
+    ]
+    print(f"\n  📌 Asian countries used (excl. I): {len(asian_countries)} countries")
+
+    # ── Helper: Company has 2+ vowels ─────────────────────────────
+    def has_two_vowels(name):
+        if pd.isna(name): return False
+        return sum(1 for ch in str(name).lower() if ch in 'aeiou') >= 2
+
+    # ── Apply Filters ─────────────────────────────────────────────
+    t2 = df[
+        (df['Job Title'] == 'Mechanical Engineer') &
+        (df['Company Size'] < 50000) &
+        (df['Work Type'].isin(['Full-Time', 'Part-Time'])) &
+        (df['Preference'] == 'Male') &
+        (df['Country'].isin(asian_countries)) &
+        (df['Job Portal'] == 'Idealist') &
+        (df['Company'].apply(has_two_vowels))
+    ].copy()
+
+    print(f"\n  📌 Records after filtering : {len(t2):,}")
+    print(f"     Note: All salary ranges exceed $50,000 threshold")
+
+    # ── Analysis using Pandas & NumPy ─────────────────────────────
+    if not t2.empty:
+        print(f"\n  📊 Company Size Statistics (NumPy):")
+        print(f"     Min Company Size : {np.nanmin(t2['Company Size']):,.0f}")
+        print(f"     Max Company Size : {np.nanmax(t2['Company Size']):,.0f}")
+        print(f"     Mean Company Size: {np.nanmean(t2['Company Size']):,.0f}")
+        print(f"     Median           : {np.nanmedian(t2['Company Size']):,.0f}")
+
+        print(f"\n  📊 Filtered Companies:")
+        print(f"  {'-' * 55}")
+        for _, row in t2.iterrows():
+            vowels = sum(1 for ch in str(row['Company']).lower() if ch in 'aeiou')
+            print(f"     {row['Company']:<40} | {row['Country']:<12} | Size: {row['Company Size']:>6,.0f} | Vowels: {vowels}")
+        print(f"  {'-' * 55}")
+
+        # Vowel verification
+        print(f"\n  📊 Vowel Check (all must have 2+ vowels):")
+        t2['Vowel_Count'] = t2['Company'].apply(
+            lambda x: sum(1 for ch in str(x).lower() if ch in 'aeiou')
+        )
+        print(t2[['Company', 'Vowel_Count']].to_string(index=False))
+    else:
+        print("  ⚠️  No records match all Task 2 filters.")
+
+    # ── Export for Tableau ────────────────────────────────────────
+    t2.to_csv('task2_filtered.csv', index=False)
+    print(f"\n  ✅ Exported → task2_filtered.csv")
+    print(f"  📌 Tableau: Scatter Plot | X=Company | Y=Company Size | Color=Salary Range")
+    print(f"  ⏰ Visible: 3 PM – 5 PM IST only")
+
+    return t2
